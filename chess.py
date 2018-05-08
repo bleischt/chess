@@ -1,38 +1,41 @@
 from queue import Queue
 
-WIDTH = 8
-HEIGHT = 8
+HEIGHT = 8 #rows
+LENGTH = 8 #cols
 EMPTY_CHAR = 'O'
 OCCUPIED_CHAR = 'X'
 
 
-def generateBoard(width, height, occupied_spots):
-    board = [[EMPTY_CHAR  for row in range(width)] for col in range(height)]
+# Generate chess board with  given 
+def generateBoard(occupied_spots):
+    board = [[EMPTY_CHAR  for row in range(HEIGHT)] for col in range(LENGTH)]
     for spot in occupied_spots:
         board[spot[0]][spot[1]] = OCCUPIED_CHAR
     return board
 
+#Print a simple character representation of the board
 def printBoard(board):
     for row in board:
         print(row)
 
+# Returns true if the given location is within the dimensions of the game board.
 def isWithinBoard(curLoc):
     row = curLoc[0]
     col = curLoc[1]
-    return row >= 0 and row < WIDTH and col >= 0 and col < HEIGHT
+    return row >= 0 and row < HEIGHT and col >= 0 and col < LENGTH
 
 #TODO: safer to do both checks within here as general rule of thumb?
 #otherwise could get out of bounds index
 def isOccupiedSpot(board, curLoc):
     return board[curLoc[0]][curLoc[1]] == OCCUPIED_CHAR
 
+# Returns the set of moves that are valid: not occupied and within the dimensions of 
+# the game board.
 def keepValidMoves(board, possibleMoves):
     possibleValidMoves = []
     for move in possibleMoves:
         if isWithinBoard(move) and not isOccupiedSpot(board, move):
             possibleValidMoves.append(move)    
-    print(possibleMoves)
-    print(possibleValidMoves)
     return possibleValidMoves
 
 def _genPossibleKingMoves(curLoc):
@@ -72,24 +75,29 @@ def _genPossibleKnightMoves(curLoc):
 def _genPossibleRookMoves(board, curLoc):
     possibleMoves = []
 
-    _addMovesInDirection(board, possibleMoves, curLoc, 1, 0)
-    _addMovesInDirection(board, possibleMoves, curLoc, -1, 0)
-    _addMovesInDirection(board, possibleMoves, curLoc, 0, 1)
-    _addMovesInDirection(board, possibleMoves, curLoc, 0, -1)
+    _genMovesInDirection(board, possibleMoves, curLoc, 1, 0)
+    _genMovesInDirection(board, possibleMoves, curLoc, -1, 0)
+    _genMovesInDirection(board, possibleMoves, curLoc, 0, 1)
+    _genMovesInDirection(board, possibleMoves, curLoc, 0, -1)
 
     return possibleMoves
 
 def _genPossibleBishopMoves(board, curLoc):
     possibleMoves = []
 
-    _addMovesInDirection(board, possibleMoves, curLoc, 1, 1)
-    _addMovesInDirection(board, possibleMoves, curLoc, -1, -1)
-    _addMovesInDirection(board, possibleMoves, curLoc, 1, -1)
-    _addMovesInDirection(board, possibleMoves, curLoc, -1, 1)
+    _genMovesInDirection(board, possibleMoves, curLoc, 1, 1)
+    _genMovesInDirection(board, possibleMoves, curLoc, -1, -1)
+    _genMovesInDirection(board, possibleMoves, curLoc, 1, -1)
+    _genMovesInDirection(board, possibleMoves, curLoc, -1, 1)
 
     return possibleMoves
 
-def _addMovesInDirection(board, movesList, curLoc, addToRow, addToCol):
+# Generates moves in any straight line direction based on current location and
+# given increments to row and column.
+# Ex: Given location (0,0) and addToRow=1 and addToCol=1,
+# function will return (1,1), (2,2), (3,3), etc. (diagonal down right) until edge of the 
+# game board is reached or until spot is occupied.
+def _genMovesInDirection(board, movesList, curLoc, addToRow, addToCol):
     row = curLoc[0] + addToRow
     col = curLoc[1] + addToCol
 
@@ -98,6 +106,8 @@ def _addMovesInDirection(board, movesList, curLoc, addToRow, addToCol):
         row += addToRow
         col += addToCol
 
+# Generates all possible valid moves of the given piece from its current location
+# on the given board
 def generatePossibleMoves(board, curLoc, piece): 
     possibleMoves = []
     if piece.lower() == 'king':
@@ -110,19 +120,22 @@ def generatePossibleMoves(board, curLoc, piece):
         possibleMoves = _genPossibleBishopMoves(board, curLoc)
     return keepValidMoves(board, possibleMoves) 
 
+# Returs True if the given start and end location are on the same color
 def isOnSameColor(startLoc, endLoc):
-    # check if given start and end location are on same color
     # one color has row/col values always even/even or edd/odd
     # other color has row/col values always even/odd or odd/even
     return (startLoc[0] % 2 == startLoc[1] % 2) == (endLoc[0] % 2 == endLoc[1] % 2)
 
+# Finds and returns a shortest path between the given start and end location
+# for the given piece on the game board.
 def find_shortest_path(board, startLoc, endLoc, piece):
     if not isWithinBoard(startLoc) or \
             not isWithinBoard(endLoc) or \
             isOccupiedSpot(board, endLoc):
         return None
 
-    # check if bishop can reach given end location based on the color
+    # if the current piece is a bishop
+    # check that it can reach given end location based on the color
     if piece.lower() == 'bishop' and not isOnSameColor(startLoc, endLoc):
         return None
     
@@ -132,12 +145,16 @@ def find_shortest_path(board, startLoc, endLoc, piece):
 
     return path
 
+# Finds the minimum number of moves to get from start to end location
+# of the specified piece on the given game board
 def find_min_moves(board, startLoc, endLoc, piece):
     path = find_shortest_path(board, startLoc, endLoc, piece)
     if len(path) == 0:
         return None
     return len(path) - 1
 
+# Performs a BFS from given start to end location constrained by the 
+# possible moves of the given piece on the given game board.
 def _breadth_first_search(board, startLoc, endLoc, piece):
     queue = Queue()
     queue.put(startLoc)
@@ -160,10 +177,11 @@ def _breadth_first_search(board, startLoc, endLoc, piece):
                 print(move)
             if move == endLoc:
                 return (locToParent, endLoc)
-        #print('queue:', list(queue))
     print('no end location found!')
     return None
 
+# Given the starting and end locations and a mapping of explored nodes to
+# parents nodes obtained during search, returns the path from start to end.
 def _backtrace(locToParent, startLoc, endLoc):
     path = []
     curLoc = endLoc
@@ -184,7 +202,7 @@ def _backtrace(locToParent, startLoc, endLoc):
 #print(keepValidMoves(board, _genPossibleKingMoves((0,0))))
 
 
-board = generateBoard(8, 8, [(1,1), (2,2), (3,4)])
+board = generateBoard([(1,1), (2,2), (3,4)])
 startLoc = (1,6)
 board[startLoc[0]][startLoc[1]] = 'S'
 endLoc = (3,2)
