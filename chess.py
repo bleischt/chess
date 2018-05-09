@@ -31,7 +31,7 @@ def generate_board(occupied_spots):
     return board
 
 
-def __print_board(board):
+def print_board(board):
     """
     Prints a simple character representation of the board to stdout.
 
@@ -47,7 +47,7 @@ def is_within_board(cur_loc):
     """
     Determines if the given location falls withing the bounds of the game board.
 
-    :param cur_loc: the location to check for falling within board bounds
+    :param cur_loc: an integer tuple representing the location to check for falling within board bounds
     :return: True if the given location lies within the bounds of the game board, False if it lies outside
     """
     row = cur_loc[0]
@@ -190,10 +190,13 @@ def generate_possible_moves(board, cur_loc, piece):
     :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
      for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
      chess piece
-    :param cur_loc: the current location of the given chess piece on the game board
+    :param cur_loc: an integer tuple representing the current location of the given chess piece on the game board
     :param piece: the chess piece to be moved
-    :return: a list of integer tuples representing valid locations the given chess piece can move to on the game board
+    :return: a set of integer tuples representing valid locations the given chess piece can move to on the game board
     """
+    if not is_within_board(cur_loc) or piece.lower() not in SUPPORTED_PIECES:
+        return None
+
     possible_moves = []
     if piece.lower() == KING:
         possible_moves = __gen_possible_king_moves(cur_loc)
@@ -203,6 +206,7 @@ def generate_possible_moves(board, cur_loc, piece):
         possible_moves = __gen_possible_knight_moves(cur_loc)
     if piece.lower() == BISHOP:
         possible_moves = __gen_possible_bishop_moves(board, cur_loc)
+
     return keep_valid_moves(board, possible_moves)
 
 
@@ -244,13 +248,17 @@ def find_shortest_path(board, start_loc, end_loc, piece):
             is_occupied_spot(board, end_loc):
         return None
 
-    # if the current piece is a bishop
-    # check that it can reach given end location based on the color
-    if piece.lower() == 'bishop' and not is_on_same_color(start_loc, end_loc):
+    if start_loc == end_loc:
+        return [start_loc]
+    elif piece.lower() == 'bishop' and not is_on_same_color(start_loc, end_loc):
         return None
 
     # perform search to find end location and generate path from search
-    loc_to_parent, end_loc = __breadth_first_search(board, start_loc, end_loc, piece)
+    loc_to_parent = __breadth_first_search(board, start_loc, end_loc, piece)
+
+    if loc_to_parent is None:
+        return None
+
     path = __backtrace(loc_to_parent, start_loc, end_loc)
 
     return path
@@ -273,12 +281,9 @@ def find_min_moves(board, start_loc, end_loc, piece):
 
     path = find_shortest_path(board, start_loc, end_loc, piece)
 
-    # for move in path:
-    #     if move != startLoc and move != endLoc:
-    #         board[move[0]][move[1]] = '-'
-
     if path is None:
         return None
+
     return len(path) - 1
 
 
@@ -311,7 +316,7 @@ def __breadth_first_search(board, start_loc, end_loc, piece):
                 queue.put(loc)
                 seen.add(loc)
             if loc == end_loc:
-                return (loc_to_parent, end_loc)
+                return loc_to_parent
 
     return None
 
@@ -324,10 +329,15 @@ def __backtrace(locToParent, start_loc, end_loc):
     """
     path = []
     cur_loc = end_loc
+
+    # start from end location and continue looking up its parent location
+    # until a path from end to start is constructed
     while cur_loc != start_loc:
         path.append(cur_loc)
         cur_loc = locToParent[cur_loc]
+
     path.append(cur_loc)
     path.reverse()
+
     return path
 
