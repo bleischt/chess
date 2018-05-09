@@ -1,7 +1,7 @@
 from queue import Queue
 
-HEIGHT = 8  # rows
-LENGTH = 8  # cols
+NUM_ROWS = 8  # rows
+NUM_COLS = 8  # cols
 EMPTY_CHAR = 'O'
 OCCUPIED_CHAR = 'X'
 
@@ -10,27 +10,34 @@ KING = 'king'
 ROOK = 'rook'
 KNIGHT = 'knight'
 
+SUPPORTED_PIECES = {BISHOP, KING, ROOK, KNIGHT}
+
 
 def generate_board(occupied_spots):
     """
     Generates a chess game board containing characters marking the empty and occupied spots.
 
-    :param occupied_spots: a list of locations to be marked as occupied by chess pieces on the game board
+    Should any input occupied spots be located out of the bounds of the board, they will be ignored.
+
+    :param occupied_spots: a set of locations to be marked as occupied by chess pieces on the game board
     :return a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
      for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
      chess piece
     """
-    board = [[EMPTY_CHAR for row in range(HEIGHT)] for col in range(LENGTH)]
+    board = [[EMPTY_CHAR for row in range(NUM_ROWS)] for col in range(NUM_COLS)]
     for spot in occupied_spots:
-        board[spot[0]][spot[1]] = OCCUPIED_CHAR
+        if is_within_board(spot):
+            board[spot[0]][spot[1]] = OCCUPIED_CHAR
     return board
 
 
-def print_board(board):
+def __print_board(board):
     """
     Prints a simple character representation of the board to stdout.
 
-    :param board: the game board
+    :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
+     for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
+     chess piece
     """
     for row in board:
         print(row)
@@ -45,15 +52,17 @@ def is_within_board(cur_loc):
     """
     row = cur_loc[0]
     col = cur_loc[1]
-    return row >= 0 and row < HEIGHT and col >= 0 and col < LENGTH
+    return row >= 0 and row < NUM_ROWS and col >= 0 and col < NUM_COLS
 
 
 def is_occupied_spot(board, cur_loc):
     """
     Determine if the given location is occupied by a chess piece on the game board.
 
-    :param board:
-    :param cur_loc:
+    :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
+     for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
+     chess piece
+    :param cur_loc: an integer tuple representing the location being considered
     :return: True if the given location is occupied by a chess piece, False if it's open,
      or None if the given location doesn't lie within the bounds of the game board
     """
@@ -67,14 +76,16 @@ def keep_valid_moves(board, possible_moves):
     Returns the set of moves that are valid: not occupied and within the dimensions of
     the game board.
 
-    :param board: the game board
-    :param possible_moves: the moves to check for validity on the game board
-    :return: a list of the moves that are valid on the game board
+    :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
+     for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
+     chess piece
+    :param possible_moves: a set of integer tuples representing the moves to check for validity on the game board
+    :return: a set of integer tuples representing moves that are valid on the game board
     """
-    possible_valid_moves = []
+    possible_valid_moves = set()
     for move in possible_moves:
         if is_within_board(move) and not is_occupied_spot(board, move):
-            possible_valid_moves.append(move)
+            possible_valid_moves.add(move)
     return possible_valid_moves
 
 
@@ -176,10 +187,12 @@ def generate_possible_moves(board, cur_loc, piece):
     Generates all possible valid moves of the given piece from its current location
     on the board.
 
-    :param board: the game board
+    :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
+     for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
+     chess piece
     :param cur_loc: the current location of the given chess piece on the game board
     :param piece: the chess piece to be moved
-    :return: a list of valid locations the given chess piece can move to on the game board
+    :return: a list of integer tuples representing valid locations the given chess piece can move to on the game board
     """
     possible_moves = []
     if piece.lower() == KING:
@@ -198,13 +211,16 @@ def is_on_same_color(first_loc, second_loc):
     Determines if the two given locations appear on the same 'color'
     (traditionally white and black) of the chess board.
 
-    :param first_loc: the first location to compare
-    :param second_loc: the second location to compare
-    :return: True if the two given locations appear on the same color on the game board
+    :param first_loc: an integer tuple representing the first location to compare
+    :param second_loc: an integer tuple representing the second location to compare
+    :return: True if the two given locations appear on the same color on the game board,
+     False if they appear on different colors, or None if they're not within bounds of the game board
     """
     # One color necessarily has row/col values always following the pattern 'even/even' or 'edd/odd'.
     # The other color necessarily has 'row/col' values always following the pattern 'even/odd' or 'odd/even'.
     # Locations appear on same color if they have same pattern of even and odd values.
+    if not is_within_board(first_loc) or not is_within_board(second_loc):
+        return None
     return (first_loc[0] % 2 == first_loc[1] % 2) == (second_loc[0] % 2 == second_loc[1] % 2)
 
 
@@ -213,9 +229,11 @@ def find_shortest_path(board, start_loc, end_loc, piece):
     Finds a shortest path between the given start and end locations
     for the given chess piece on the game board.
 
-    :param board: the game board
-    :param start_loc: the starting location of the given chess piece
-    :param end_loc: the desired end location of the given chess piece
+    :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
+     for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
+     chess piece
+    :param start_loc: an integer tuple representing the starting location of the given chess piece
+    :param end_loc: an integer tuple representing the desired end location of the given chess piece
     :param piece: the chess piece for which the shortest path is to be found
     :return: a list of locations on the game board required to travel from the given start
      to the given end location (in sequential order), including the start and end locations themselves,
@@ -243,15 +261,23 @@ def find_min_moves(board, start_loc, end_loc, piece):
     Finds the minimum number of moves required to get from start to end location
     of the specified piece on the given game board, should one exist.
 
-    :param board: the game board
-    :param start_loc: the starting location of the given chess piece
-    :param end_loc: the desired end location of the given chess piece
+    :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
+     for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
+     chess piece
+    :param start_loc: an integer tuple representing the starting location of the given chess piece
+    :param end_loc: an integer tuple representing the desired end location of the given chess piece
     :param piece: the chess piece for which the minimum number of moves is to be found
     :return: the minimum number of moves required to move from start to end location, or None if
     there is no possible path between the given start and end locations
     """
+
     path = find_shortest_path(board, start_loc, end_loc, piece)
-    if len(path) == 0:
+
+    # for move in path:
+    #     if move != startLoc and move != endLoc:
+    #         board[move[0]][move[1]] = '-'
+
+    if path is None:
         return None
     return len(path) - 1
 
@@ -276,9 +302,7 @@ def __breadth_first_search(board, start_loc, end_loc, piece):
     # perform BFS by iterating through the fringe nodes and checking for the end location
     while not queue.empty():
         cur_loc = queue.get()
-        # print('curLoc:', cur_loc)
         possible_moves = generate_possible_moves(board, cur_loc, piece)
-        # print('possibleMoves:')
         for loc in possible_moves:
             # if we haven't already seen this loc before,
             # note the location it came from, add it to the fringe of the BFS, and mark it seen
@@ -286,10 +310,9 @@ def __breadth_first_search(board, start_loc, end_loc, piece):
                 loc_to_parent[loc] = cur_loc
                 queue.put(loc)
                 seen.add(loc)
-                # print(loc)
             if loc == end_loc:
                 return (loc_to_parent, end_loc)
-    # print('no end location found!')
+
     return None
 
 
@@ -308,34 +331,3 @@ def __backtrace(locToParent, start_loc, end_loc):
     path.reverse()
     return path
 
-
-# board[1][1] = 'X'
-# board[2][2] = 'X'
-# board[3][4] = 'X'
-# printBoard(board)
-# print(_genPossibleKingMoves((3,3)))
-# print(keepValidMoves(board, _genPossibleKingMoves((3,3))))
-# print(_genPossibleKingMoves((0,0)))
-# print(keepValidMoves(board, _genPossibleKingMoves((0,0))))
-
-
-board = generate_board([(1, 1), (2, 2), (3, 4)])
-startLoc = (1, 6)
-board[startLoc[0]][startLoc[1]] = 'S'
-endLoc = (3, 2)
-board[endLoc[0]][endLoc[1]] = 'E'
-print_board(board)
-# locToParent,endLoc = _breadth_first_search(board, startLoc, endLoc, 'king')
-path = find_shortest_path(board, startLoc, endLoc, 'bishop')
-print('path:', path)
-# numMoves = find_min_moves(board, startLoc, endLoc, 'bishop')
-# print('numMoves:', numMoves)
-# print('locToParent:', locToParent)
-# print('endLoc:', endLoc)
-# path = _backtrace(locToParent, startLoc, endLoc)
-print('path:', path)
-for move in path:
-    if move != startLoc and move != endLoc:
-        board[move[0]][move[1]] = '-'
-
-print_board(board)
