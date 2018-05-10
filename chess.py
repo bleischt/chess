@@ -71,22 +71,32 @@ def is_occupied_spot(board, cur_loc):
     return board[cur_loc[0]][cur_loc[1]] == OCCUPIED_CHAR
 
 
-def keep_valid_moves(board, possible_moves):
+def generate_possible_moves(board, cur_loc, piece):
     """
-    Returns the set of moves that are valid: not occupied and within the dimensions of
-    the game board.
+    Generates all possible valid moves of the given piece from its current location
+    on the board.
 
     :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
      for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
      chess piece
-    :param possible_moves: a set of integer tuples representing the moves to check for validity on the game board
-    :return: a set of integer tuples representing moves that are valid on the game board
+    :param cur_loc: an integer tuple representing the current location of the given chess piece on the game board
+    :param piece: the chess piece to be moved
+    :return: a set of integer tuples representing valid locations the given chess piece can move to on the game board
     """
-    possible_valid_moves = set()
-    for move in possible_moves:
-        if is_within_board(move) and not is_occupied_spot(board, move):
-            possible_valid_moves.add(move)
-    return possible_valid_moves
+    if not is_within_board(cur_loc) or piece.lower() not in SUPPORTED_PIECES:
+        return None
+
+    possible_moves = []
+    if piece.lower() == KING:
+        possible_moves = __gen_possible_king_moves(cur_loc)
+    if piece.lower() == ROOK:
+        possible_moves = __gen_possible_rook_moves(board, cur_loc)
+    if piece.lower() == KNIGHT:
+        possible_moves = __gen_possible_knight_moves(cur_loc)
+    if piece.lower() == BISHOP:
+        possible_moves = __gen_possible_bishop_moves(board, cur_loc)
+
+    return keep_valid_moves(board, possible_moves)
 
 
 def __gen_possible_king_moves(cur_loc):
@@ -182,32 +192,22 @@ def __gen_moves_in_direction(board, moves_list, cur_loc, add_to_row, add_to_col)
         col += add_to_col
 
 
-def generate_possible_moves(board, cur_loc, piece):
+def keep_valid_moves(board, possible_moves):
     """
-    Generates all possible valid moves of the given piece from its current location
-    on the board.
+    Returns the set of moves that are valid: not occupied and within the dimensions of
+    the game board.
 
     :param board: a 2D list of characters representing the game board, with dimensions HEIGHT and LENGTH, character EMPTY_CHAR
      for a spot containing no chess piece, and character OCCUPIED_CHAR for a spot containing a
      chess piece
-    :param cur_loc: an integer tuple representing the current location of the given chess piece on the game board
-    :param piece: the chess piece to be moved
-    :return: a set of integer tuples representing valid locations the given chess piece can move to on the game board
+    :param possible_moves: a set of integer tuples representing the moves to check for validity on the game board
+    :return: a set of integer tuples representing moves that are valid on the game board
     """
-    if not is_within_board(cur_loc) or piece.lower() not in SUPPORTED_PIECES:
-        return None
-
-    possible_moves = []
-    if piece.lower() == KING:
-        possible_moves = __gen_possible_king_moves(cur_loc)
-    if piece.lower() == ROOK:
-        possible_moves = __gen_possible_rook_moves(board, cur_loc)
-    if piece.lower() == KNIGHT:
-        possible_moves = __gen_possible_knight_moves(cur_loc)
-    if piece.lower() == BISHOP:
-        possible_moves = __gen_possible_bishop_moves(board, cur_loc)
-
-    return keep_valid_moves(board, possible_moves)
+    possible_valid_moves = set()
+    for move in possible_moves:
+        if is_within_board(move) and not is_occupied_spot(board, move):
+            possible_valid_moves.add(move)
+    return possible_valid_moves
 
 
 def is_on_same_color(first_loc, second_loc):
@@ -319,8 +319,6 @@ def __breadth_first_search(board, start_loc, end_loc, piece):
                 return loc_to_parent
 
     return None
-
-
 
 def __backtrace(locToParent, start_loc, end_loc):
     """
