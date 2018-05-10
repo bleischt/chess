@@ -1,14 +1,14 @@
 # chess
 This project represents a utility class for planning moves in chess with various pieces. It was built with the intent to be able to answer the following problem statement: 
 
+### Problem Statement
+Given an 8x8 chess board, find the minimum number of moves required to move a king, knight, and a rook from a given start to a given end location. 
+
 _The currently supported chess pieces are:_
 1. King
 2. Rook
 3. Bishop
 4. Knight
-
-### Problem Statement
-Given an 8x8 chess board, find the minimum number of moves required to move a king, knight, and a rook from a given start to a given end location. 
 
 ### Assumptions
 - No constraints are placed on the board other than size (e.g. there can be any number of pieces on it)
