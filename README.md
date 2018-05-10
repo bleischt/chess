@@ -13,6 +13,7 @@ _The currently supported chess pieces are:_
 ### Assumptions
 - No constraints are placed on the board other than size (e.g. there can be any number of pieces on it)
 - The possible moves for a piece are according to the standard rules of chess (e.g. Knight can jump over other pieces)
+- Min moves and shortest path are found assuming no other pieces pieces on the board are moved.
 
 ### API Overview
 The project is split into a `driver` module to run the app (in this case, examples), a `chess` utility module containing all the chess-related methods, and a `test_chess` unit test module.
